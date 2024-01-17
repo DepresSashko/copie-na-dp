@@ -1,17 +1,15 @@
+// Import mongoose
 const mongoose = require('mongoose');
 
+// Create a song schema
 const songSchema = new mongoose.Schema({
-  title: {
-    type: String,
-    required: true,
-  },
-  artist: {
-    type: String,
-    required: true,
-  },
-  // Add more fields as needed
+  title: String,
+  artist: String,
+  genre: String,
+  duration: Number,
+  data: Buffer,
+  contentType: String
 });
 
-const Song = mongoose.model('Song', songSchema);
-
-module.exports = Song;
+// Export the song model
+module.exports = mongoose.model('Song', songSchema);

@@ -1,61 +1,89 @@
-// public/client.js
+document.addEventListener('DOMContentLoaded', async () => {
+  console.log('DOMContentLoaded event fired');
 
-document.addEventListener('DOMContentLoaded', () => {
-    const audioContext = new (window.AudioContext || window.webkitAudioContext)();
-    const mediaRecorderChunks = [];
+  const audioContext = new (window.AudioContext || window.webkitAudioContext)();
+  const audioPlayer = document.getElementById('audioPlayer');
+  const recordButton = document.getElementById('recordButton');
+  const stopButton = document.getElementById('stopButton');
+  const playButton = document.getElementById('playButton');
+  const saveButton = document.getElementById('saveButton');
 
-    const pianoKeys = document.querySelectorAll('.piano-key');
-    const startRecordingButton = document.getElementById('startRecording');
-    const stopRecordingButton = document.getElementById('stopRecording');
+  // Get the user's audio stream
+  const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
 
-    const gainNode = audioContext.createGain();
-    gainNode.connect(audioContext.destination);
+  // Create a MediaRecorder instance
+  const recorderInstance = new MediaRecorder(stream);
 
-    pianoKeys.forEach((key) => {
-        key.addEventListener('click', () => {
-            const note = key.dataset.note;
-            playNoteAudio(note);
-        });
-    });
-    
-    function playNoteAudio(note) {
-        const audio = new Audio(`tunes/${note}.wav`);
-        audio.play();
+  // Store the audio data chunks
+  let audioChunks = [];
+
+  // Handle dataavailable event
+  recorderInstance.ondataavailable = event => {
+    console.log('Audio data available');
+    if (event.data.size > 0) {
+      audioChunks.push(event.data);
     }
+  };
 
-    navigator.mediaDevices.getUserMedia({ audio: true })
-        .then((stream) => {
-            const mediaRecorder = new MediaRecorder(stream);
+  // Handle start event
+  recorderInstance.onstart = () => {
+    console.log('Recording started');
+    recordButton.disabled = true;
+    stopButton.disabled = false;
+    playButton.disabled = true;
+    saveButton.disabled = true;
+    audioPlayer.src = '';
+  };
 
-            mediaRecorder.ondataavailable = (event) => {
-                if (event.data.size > 0) {
-                    mediaRecorderChunks.push(event.data);
-                }
-            };
+  // Handle stop event
+  recorderInstance.onstop = () => {
+    console.log('Recording stopped');
+    recordButton.disabled = false;
+    stopButton.disabled = true;
+    playButton.disabled = false;
+    saveButton.disabled = false;
+  };
 
-            mediaRecorder.onstop = () => {
-                const audioBlob = new Blob(mediaRecorderChunks, { type: 'tunes/wav' });
-                const audioUrl = URL.createObjectURL(audioBlob);
+  // Start recording
+  recordButton.addEventListener('click', () => {
+    console.log('Record button clicked');
+    audioChunks = [];
+    recorderInstance.start();
+  });
 
-                // Use audioBlob or audioUrl as needed (e.g., send to server for storage)
-                // ...
+  // Stop recording
+  stopButton.addEventListener('click', () => {
+    console.log('Stop button clicked');
+    recorderInstance.stop();
+  });
 
-                mediaRecorderChunks.length = 0;
-            };
+  // Play the recorded audio
+  playButton.addEventListener('click', () => {
+    console.log('Play button clicked');
+    const audioBlob = new Blob(audioChunks, { type: 'audio/wav' });
+    const audioUrl = URL.createObjectURL(audioBlob);
+    audioPlayer.src = audioUrl;
+    audioPlayer.play();
+  });
 
-            startRecordingButton.addEventListener('click', () => {
-                mediaRecorder.start();
-                startRecordingButton.disabled = true;
-                stopRecordingButton.disabled = false;
-            });
+  // Save the recorded audio
+    saveButton.addEventListener('click', async () => {
+      console.log('Save button clicked');
+      const audioBlob = new Blob(audioChunks, { type: 'audio/wav' });
+      // Create a FormData instance and append the file
+      const formData = new FormData();
+      formData.append('file', audioBlob);
+      // Send the file to the server-side script via fetch
+      const response = await fetch('/upload', {
+        method: 'POST',
+        body: formData
+      });
+      // Handle the response
+      if (response.ok) {
+        console.log('File uploaded successfully');
+      } else {
+        console.error('File upload failed');
+      }
+    });
 
-            stopRecordingButton.addEventListener('click', () => {
-                mediaRecorder.stop();
-                startRecordingButton.disabled = false;
-                stopRecordingButton.disabled = true;
-            });
-        })
-        .catch((error) => {
-            console.error('Error accessing microphone:', error);
-        });
 });

@@ -159,7 +159,7 @@ header input {
     width: 50px;
   }
 }
-button{
+z-index button{
   background-color: white;
   color: black;
   border: 2px solid #04AA6D; 

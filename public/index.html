@@ -6,7 +6,6 @@
     <link rel="stylesheet" href="/style.css">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <script src="/script.js" defer></script>
-    <script src="/recordscript.js" defer></script>
   </head>
   <body>
     <div class="wrapper">
@@ -19,6 +18,15 @@
           <span>Show Keys</span><input type="checkbox" checked>
         </div>
         
+      </header>
+      <header>
+        <button id="recordButton">Record</button>
+        <button id="stopButton" disabled>Stop</button>
+        <button id="playButton" disabled>Play</button>
+        <button id="saveButton" disabled>Save</button>
+        <audio id="audioPlayer" controls></audio>
+            <script src="recordscript.js"></script>
+            <button onclick="window.location.href = '/YourSongList.html';">Your songs</button>
       </header>
       <ul class="piano-keys">
         <li class="key white" data-key="a"><span>a</span></li>
@@ -40,9 +48,5 @@
         <li class="key white" data-key=";"><span>;</span></li>
       </ul>
     </div>
-    <ul id="songList"></ul>
-    <button id="startRecording">Start Recording</button>
-    <button id="stopRecording" disabled>Stop Recording</button>
-    <button id="download">Download MP3</button></div>
   </body>
 </html>
