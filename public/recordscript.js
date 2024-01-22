@@ -6,7 +6,6 @@ document.addEventListener('DOMContentLoaded', async () => {
   const recordButton = document.getElementById('recordButton');
   const stopButton = document.getElementById('stopButton');
   const playButton = document.getElementById('playButton');
-  const saveButton = document.getElementById('saveButton');
 
   // Get the user's audio stream
   const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
@@ -60,30 +59,57 @@ document.addEventListener('DOMContentLoaded', async () => {
   // Play the recorded audio
   playButton.addEventListener('click', () => {
     console.log('Play button clicked');
-    const audioBlob = new Blob(audioChunks, { type: 'audio/wav' });
+    const audioBlob = new Blob(audioChunks, { type: 'tunes/wav' });
     const audioUrl = URL.createObjectURL(audioBlob);
     audioPlayer.src = audioUrl;
     audioPlayer.play();
   });
 
-  // Save the recorded audio
-    saveButton.addEventListener('click', async () => {
-      console.log('Save button clicked');
-      const audioBlob = new Blob(audioChunks, { type: 'audio/wav' });
-      // Create a FormData instance and append the file
-      const formData = new FormData();
-      formData.append('file', audioBlob);
-      // Send the file to the server-side script via fetch
-      const response = await fetch('/upload', {
-        method: 'POST',
-        body: formData
-      });
-      // Handle the response
-      if (response.ok) {
-        console.log('File uploaded successfully');
-      } else {
-        console.error('File upload failed');
-      }
-    });
+  document.getElementById('saveButton').addEventListener('click', () => {
+    if (audioChunks.length === 0) {
+      console.error('No audio to save.');
+      return;
+    }
+  
+    const audioBlob = new Blob(audioChunks, { type: 'tunes/wav' });
+  
+    // Create FormData to send the audio file to the server
+    const formData = new FormData();
+    formData.append('songList', audioBlob, 'recording.wav');
+  
+    // Send the audio file to the server
+    fetch('/save-audio', {
+      method: 'POST',
+      body: formData,
+    })
+    .then(response => response.json())
+    .then(data => {
+      console.log('Audio saved to database:', data);
+  
+      // Fetch and update the list of recorded songs on the list.html page
+      fetch('/get-songs')
+        .then(response => response.json())
+        .then(songs => {
+          // Update the list on list.html (assuming you have a list element with id 'songList')
+          const songList = document.getElementById('YourSongList');
+          songList.innerHTML = ''; // Clear the existing list
+  
+          songs.forEach(song => {
+            const listItem = document.createElement('li');
+            const audioElement = document.createElement('audio');
+            audioElement.controls = true;
+            audioElement.src = song.path;
+  
+            listItem.appendChild(document.createTextNode(song.filename));
+            listItem.appendChild(audioElement);
+  
+            songList.appendChild(listItem);
+          });
+        })
+        .catch(error => console.error('Error fetching songs:', error));
+    })
+    .catch(error => console.error('Error saving audio to database:', error));
+  });
+  
 
 });

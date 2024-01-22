@@ -1,16 +1,21 @@
-// songs.js
-// Get the song data from localStorage
-const songs = JSON.parse(localStorage.getItem('song'));
+document.addEventListener('DOMContentLoaded', () => {
+  const songList = document.getElementById('songList');
 
-// Get the list element from the document
-const songList = document.getElementById('song-list');
+  // Fetch the list of recorded songs from the server
+  fetch('/get-songs')
+    .then(response => response.json())
+    .then(songs => {
+      songs.forEach(song => {
+        const listItem = document.createElement('li');
+        const audioElement = document.createElement('audio');
+        audioElement.controls = true;
+        audioElement.src = song.path;
 
-// Iterate over the song data and create list items
-songs.forEach(song => {
-  // Create a new list item element
-  const listItem = document.createElement('li');
-  // Set the text content of the list item to the song title
-  listItem.textContent = song.title;
-  // Append the list item to the list element
-  songList.appendChild(listItem);
+        listItem.appendChild(document.createTextNode(song.filename));
+        listItem.appendChild(audioElement);
+
+        songList.appendChild(listItem);
+      });
+    })
+    .catch(error => console.error('Error fetching songs:', error));
 });

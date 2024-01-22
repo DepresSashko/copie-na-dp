@@ -1,7 +1,7 @@
 const express = require('express');
 const path = require('path');
 const mongoose = require('mongoose');
-const ffmpeg = require('fluent-ffmpeg');
+const ffmpeg = require('./node_modules/fluent-ffmpeg');
 const Audio = require('./models/audio');
 const Song = require('./models/song');
 
@@ -27,7 +27,7 @@ app.get('/', (req, res) => {
 app.post('/save-audio', async (req, res) => {
   const audioChunks = [];
   const filename = `recording-${Date.now()}.wav`;
-  const audioPath = path.join(__dirname, 'public', 'audio', filename);
+  const audioPath = path.join(__dirname, 'public', 'songList', filename);
 
   // Write the received audio data to a WAV file
   req.on('data', chunk => {
@@ -40,11 +40,11 @@ app.post('/save-audio', async (req, res) => {
 
     // Convert the WAV file to MP3 using fluent-ffmpeg
     const outputFilename = `recording-${Date.now()}.mp3`;
-    const outputPath = path.join(__dirname, 'public', 'audio', outputFilename);
+    const outputPath = path.join(__dirname, 'public', 'songList', outputFilename);
 
     ffmpeg()
       .input(audioPath)
-      .audioCodec('libmp3lame')
+      .audioCodec('guz')
       .toFormat('mp3')
       .on('end', async () => {
         // Save relevant information to the database
