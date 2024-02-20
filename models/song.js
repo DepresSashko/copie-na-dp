@@ -1,15 +1,11 @@
-// Import mongoose
 const mongoose = require('mongoose');
 
-// Create a song schema
 const songSchema = new mongoose.Schema({
   title: String,
   artist: String,
-  genre: String,
-  duration: Number,
-  data: Buffer,
-  contentType: String
+  audioFilename: String, // Store the filename of the associated audio file
 });
 
-// Export the song model
-module.exports = mongoose.model('Song', songSchema);
+const Song = mongoose.model('Song', songSchema);
+
+module.exports = Song;

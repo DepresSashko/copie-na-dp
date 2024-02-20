@@ -1,96 +1,97 @@
 const express = require('express');
-const path = require('path');
 const mongoose = require('mongoose');
-const ffmpeg = require('./node_modules/fluent-ffmpeg');
-const Audio = require('./models/audio');
-const Song = require('./models/song');
-
-
+const fs = require('fs');
+const path = require('path');
+const multer = require('multer');
 
 const app = express();
 const port = 3000;
 
-mongoose.connect('mongodb://localhost:27017/your-database-name', {
+// Connect to MongoDB
+mongoose.connect('mongodb://localhost:27017/PianoZen', {
   useNewUrlParser: true,
   useUnifiedTopology: true,
 });
+const db = mongoose.connection;
+db.on('error', console.error.bind(console, 'MongoDB connection error:'));
+db.once('open', () => {
+  console.log('Connected to MongoDB');
+});
 
+// Define a schema for audio files
+const audioSchema = new mongoose.Schema({
+  filename: String,
+  filePath: String,
+});
+
+// Create a model based on the schema
+const Audio = mongoose.model('Audio', audioSchema);
+
+// Middleware to serve static files from the 'public' directory
 app.use(express.static('public'));
+
+
+// Middleware to handle JSON requests
 app.use(express.json());
 
-// Serve the HTML page
-app.get('/', (req, res) => {
-  res.sendFile(path.join(__dirname, 'index.html'));
-});
+// Set up multer for handling file uploads
+const upload = multer();
 
-// Handle saving audio to the database
-app.post('/save-audio', async (req, res) => {
-  const audioChunks = [];
-  const filename = `recording-${Date.now()}.wav`;
-  const audioPath = path.join(__dirname, 'public', 'songList', filename);
+// Define the directory where audio files will be saved
+const audioDirectory = path.join(__dirname, 'public', 'songList');
 
-  // Write the received audio data to a WAV file
-  req.on('data', chunk => {
-    audioChunks.push(chunk);
-  });
+// Create the directory if it doesn't exist
+if (!fs.existsSync(audioDirectory)) {
+  fs.mkdirSync(audioDirectory, { recursive: true });
+}
 
-  req.on('end', async () => {
-    const audioBlob = Buffer.concat(audioChunks);
-    require('fs').writeFileSync(audioPath, audioBlob);
-
-    // Convert the WAV file to MP3 using fluent-ffmpeg
-    const outputFilename = `recording-${Date.now()}.mp3`;
-    const outputPath = path.join(__dirname, 'public', 'songList', outputFilename);
-
-    ffmpeg()
-      .input(audioPath)
-      .audioCodec('guz')
-      .toFormat('mp3')
-      .on('end', async () => {
-        // Save relevant information to the database
-        try {
-          const audio = new Audio({
-            filename: outputFilename,
-            path: `tunes/${outputFilename}`,
-            note: 'a',
-            timestamp: new Date(),
-          });
-
-          await audio.save();
-          console.log('Audio saved to database:', audio);
-        } catch (error) {
-          console.error('Error saving audio to database:', error);
-        }
-
-        res.status(200).json({ message: 'Audio saved successfully' });
-
-        // Remove the temporary WAV file
-        require('fs').unlinkSync(audioPath);
-      })
-      .on('error', (err) => {
-        console.error('Error converting to MP3:', err);
-        res.status(500).json({ error: 'Error converting to MP3' });
-      })
-      .save(outputPath);
-  });
-});
-
-// Handle fetching the list of songs
-app.get('/get-songs', async (req, res) => {
+// Route for saving audio
+app.post('/save-audio', upload.fields([{ name: 'audioBlob', maxCount: 1 }, { name: 'audioData', maxCount: 1 }]), (req, res) => {
   try {
-    const songs = await Audio.find({}, 'filename path');
-    res.json(songs);
+    // Get the audio blob file
+    const audioBlobFile = req.files['audioBlob'][0];
+    // Get the audio data
+    const audioData = req.body['audioData'];
+
+    // Generate a unique filename
+    const filename = `audio_${Date.now()}.wav`;
+
+    // Write the audio blob to a file
+    const blobFilePath = path.join(audioDirectory, filename);
+    fs.writeFileSync(blobFilePath, audioBlobFile.buffer);
+
+    // Write the audio data to a file
+    const dataFilePath = path.join(audioDirectory, `${filename}.txt`);
+    fs.writeFileSync(dataFilePath, audioData);
+
+    res.status(200).json({ message: 'Audio saved successfully', filename });
   } catch (error) {
-    console.error('Error fetching songs from the database:', error);
-    res.status(500).send('Internal Server Error');
+    console.error('Error saving audio:', error);
+    res.status(500).json({ error: 'Internal Server Error' });
+  }
+});
+const songListDirectory = path.join(__dirname, 'public', 'songList');
+
+// Route to fetch the list of saved songs
+app.get('/get-songs', (req, res) => {
+  try {
+    // Read the list of files in the songListDirectory
+    fs.readdir(songListDirectory, (err, files) => {
+      if (err) {
+        console.error('Error reading song list:', err);
+        res.status(500).json({ error: 'Internal Server Error' });
+      } else {
+        // Send the list of files as the response
+        res.json(files);
+      }
+    });
+  } catch (error) {
+    console.error('Error fetching song list:', error);
+    res.status(500).json({ error: 'Internal Server Error' });
   }
 });
 
-// Serve the list.html page
-app.get('/list', (req, res) => {
-  res.sendFile(path.join(__dirname, 'YourSongList.html'));
-});
-
+// Start the server
 app.listen(port, () => {
   console.log(`Server is running on http://localhost:${port}`);
 });

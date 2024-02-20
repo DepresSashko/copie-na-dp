@@ -21,9 +21,10 @@
       </header>
       <header>
         <button id="recordButton">Record</button>
-        <button id="stopButton" disabled>Stop</button>
-        <button id="playButton" disabled>Play</button>
-        <button id="saveButton" disabled>Save</button>
+        <button id="stopButton" style="display: none;">Stop</button>
+        <div id="recordingIndicator" style="display: none; color: rgb(51, 255, 0);">Recording...</div>
+        <button id="saveButton" style="display: none;">Save Recording</button>
+        <button id="playButton" style="display: none;">Play Recording</button>
         <audio id="audioPlayer" controls></audio>
             <script src="recordscript.js"></script>
             <button onclick="window.location.href = '/YourSongList.html';">Your songs</button>
