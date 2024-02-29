@@ -1,0 +1,42 @@
+body {
+  font-family: Arial, sans-serif;
+  margin: 0;
+  padding: 0;
+  background-color: #333 !important;
+  color: #fff;
+}
+
+.container {
+  max-width: 800px;
+  margin: 0 auto;
+  text-align: center;
+}
+
+h1 {
+  text-align: center;
+  margin-bottom: 20px;
+  color: #fff !important;
+}
+
+#songList {
+  list-style-type: none;
+  padding: 0;
+  color: #fff !important;
+}
+
+.song-item {
+  background-color: #fff;
+  border-radius: 5px;
+  padding: 10px;
+  margin-bottom: 10px;
+}
+
+.song-item audio {
+  width: 100%;
+}
+
+.song-name {
+  font-weight: bold;
+  margin-bottom: 5px;
+}
+
