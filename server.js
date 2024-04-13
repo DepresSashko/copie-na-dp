@@ -3,6 +3,13 @@ const mongoose = require('mongoose');
 const fs = require('fs');
 const path = require('path');
 const multer = require('multer');
+const bodyParser = require('body-parser');
+const bcrypt = require('bcrypt');
+const Account = require('./models/account');
+const Audio = require('./models/audio');
+const Song = require('./models/song');
+
+
 
 const app = express();
 const port = 3000;
@@ -90,6 +97,40 @@ app.get('/get-songs', (req, res) => {
     res.status(500).json({ error: 'Internal Server Error' });
   }
 });
+
+app.use(bodyParser.json());
+app.use(express.static('public')); 
+
+// Register route
+app.post('/register', async (req, res) => {
+  const { username, password } = req.body;
+
+  try {
+      const account = new Account({ username, password });
+      await account.save();
+      res.status(201).send('User registered successfully');
+  } catch (error) {
+      res.status(400).send('Error registering user');
+  }
+});
+
+// Login route
+app.post('/login', async (req, res) => {
+  const { username, password } = req.body;
+
+  try {
+      const account = await Account.findOne({ username });
+      if (!account) return res.status(404).send('User not found');
+
+      const passwordMatch = await account.comparePassword(password);
+      if (!passwordMatch) return res.status(401).send('Invalid password');
+
+      res.status(200).send('Login successful');
+  } catch (error) {
+      res.status(500).send('Internal server error');
+  }
+});
+
 
 // Start the server
 app.listen(port, () => {

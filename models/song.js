@@ -1,9 +1,8 @@
 const mongoose = require('mongoose');
 
 const songSchema = new mongoose.Schema({
-  title: String,
-  artist: String,
-  audioFilename: String, // Store the filename of the associated audio file
+  name: String,
+  audio: { type: mongoose.Schema.Types.ObjectId, ref: 'Audio' }
 });
 
 const Song = mongoose.model('Song', songSchema);

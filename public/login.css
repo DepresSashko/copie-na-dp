@@ -1,0 +1,15 @@
+/* style.css */
+.container {
+    width: 300px;
+    margin: 0 auto;
+    text-align: center;
+}
+
+input {
+    margin-bottom: 10px;
+    padding: 5px;
+}
+
+button {
+    padding: 5px 10px;
+}
